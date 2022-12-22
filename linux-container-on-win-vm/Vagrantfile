@@ -1,0 +1,137 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+HOSTNAME = "windockergui"
+
+$msg = <<MSG
+------------------------------------------------------
+GUI application runnning on Docker container
+Container: GNU/Linux
+Host: MS Windows 11
+
+xfreerdp /u:vagrant  '/p:vagrant' "/v:127.0.0.1:53389" /w:1600 /h:900 /cert:ignore
+vagrant ssh
+vagrant powershell    # if you are on a Windows host
+
+vagrant winrm --shell powershell --elevated --command 'systeminfo'
+vagrant winrm --shell powershell --elevated --command 'systeminfo | find "System Type"'
+
+------------------------------------------------------
+MSG
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  use_proxy = Vagrant.has_plugin?("vagrant-proxyconf")
+
+  if Vagrant.has_plugin?("vagrant-hostmanager")
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.manage_guest = true
+    config.hostmanager.ignore_private_ip = false
+    config.hostmanager.include_offline = true
+  end
+
+ config.vm.post_up_message = $msg
+
+ config.vm.define HOSTNAME do |srv|
+
+    srv.vm.box = "gusztavvargadr/windows-11"
+
+    # Use Windows Remote Management protocol (WinRM)
+    srv.vm.communicator = "winrm"
+    srv.winrm.username = "vagrant"
+    srv.winrm.password = "vagrant"
+    srv.winrm.execution_time_limit =  "PT2H"
+    srv.winrm.timeout = 3600 # 60 minutes
+
+    #srv.winrm.username = "Administrator"
+    #srv.winrm.password = "Packer42"
+
+    #srv.ssh.username = "Administrator"
+    #srv.ssh.password = "Packer42"
+
+    srv.vm.network "private_network", ip: "192.168.56.10", virtualbox__intnet: true
+    srv.vm.box_check_update = false
+    srv.ssh.forward_agent = true
+    srv.ssh.forward_x11 = true
+    srv.vm.hostname = HOSTNAME
+    srv.vm.boot_timeout = 3600 # 60 minutes
+
+    if Vagrant.has_plugin?("vagrant-hostmanager")
+      srv.hostmanager.aliases = %W(#{HOSTNAME+".virtual.ballardini.com.ar"} #{HOSTNAME} )
+    end
+
+    srv.vm.provider :virtualbox do |vb|
+      vb.gui = true
+      vb.cpus = 2
+      vb.memory = "6144"
+    end
+  end
+
+    ##
+    # Aprovisionamiento
+    #
+    if Vagrant.has_plugin?("vagrant-proxyconf")
+      config.vm.provision "proxy_setup", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+        setx HTTP_PROXY "#{config.proxy.http}" /m
+        setx HTTPS_PROXY "#{config.proxy.https}" /m
+        setx NO_PROXY "#{config.proxy.no_proxy}" /m
+
+POWERSHELL
+    end
+
+
+    config.vm.provision "general_setup", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+
+      # set RDP
+      Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+      Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+      # enable WinRM: already enabled in box
+      #powershell -Command Enable-PSRemoting -Force
+
+      Set-TimeZone "Coordinated Universal Time" -Verbose
+      Disable-BingSearch
+      Set-TaskbarOptions -Dock Bottom
+      Update-Help
+      Install-WindowsUpdate
+
+      # Install Boxstarter
+      $box_uri = "https://boxstarter.org/bootstrapper.ps1"
+      $proxy = ([System.Net.WebRequest]::GetSystemWebproxy()).GetProxy($uri)
+      . { Invoke-WebRequest -useb $box_uri -Proxy $proxy -ProxyUseDefaultCredentials } | Invoke-Expression; Get-Boxstarter -Force
+
+      # Copy setup[12].ps1 to the Temp directory and then run boxstarter with our setup.ps1 script
+      $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
+      cp C:\vagrant\provision\setup1.ps1 $env:TEMP
+      cp C:\vagrant\provision\setup2.ps1 $env:TEMP
+
+POWERSHELL
+
+    config.vm.provision :reload
+
+    config.vm.provision "run_setup1", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+        setx HTTP_PROXY "#{config.proxy.http}" /m
+        setx HTTPS_PROXY "#{config.proxy.https}" /m
+        setx NO_PROXY "#{config.proxy.no_proxy}" /m
+      $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
+      Import-Module Boxstarter.Chocolatey
+      $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
+      Install-BoxstarterPackage $env:TEMP\setup1.ps1 -Credential $credential
+POWERSHELL
+
+    config.vm.provision :reload
+
+    config.vm.provision "run_setup2", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+        setx HTTP_PROXY "#{config.proxy.http}" /m
+        setx HTTPS_PROXY "#{config.proxy.https}" /m
+        setx NO_PROXY "#{config.proxy.no_proxy}" /m
+      $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
+      Import-Module Boxstarter.Chocolatey
+      $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
+      Install-BoxstarterPackage $env:TEMP\setup2.ps1 -Credential $credential
+POWERSHELL
+
+end
