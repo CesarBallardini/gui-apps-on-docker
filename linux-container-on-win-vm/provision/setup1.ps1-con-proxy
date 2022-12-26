@@ -1,5 +1,4 @@
 # Boxstarter setup script
-Set-PSDebug -Trace 1
 
 # Notes:
 #  - This file has to be idempotent. it will be run several times if the
@@ -25,15 +24,16 @@ dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /nores
 # Step 3: Update the Linux kernel to the latest version
 $uri = "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
 $out = "c:\tmp\wsl_update_x64.msi"
-Invoke-WebRequest -uri $uri -OutFile $out 
+$proxy = ([System.Net.WebRequest]::GetSystemWebproxy()).GetProxy($uri)
+Invoke-WebRequest -uri $uri -OutFile $out -Proxy $proxy -ProxyUseDefaultCredentials
 Start-Process -FilePath "msiexec.exe" -ArgumentList "/i $out /quiet /norestart /l c:\tmp\wsl2_install_log.txt" -NoNewWindow -Wait
 #start /wait msiexec /i C:\tmp\wsl_update_x64.msi /quiet /norestart /l c:\tmp\wsl2_install_log.txt
 
 # Step 4: Set WSL2 as the default version
 wsl --set-default-version 2
 # Step 6: Install your preferred Linux distribution
-wsl --list --online
-wsl --install --distribution ubuntu
+
+
 
 # Docker
 choco install docker-desktop  # Windows Pro / Enterprise
@@ -50,9 +50,8 @@ dism.exe /Online  /Get-FeatureInfo:VirtualMachinePlatform
 dism.exe /Online  /Get-FeatureInfo:HypervisorPlatform
 dism.exe /Online  /Get-FeatureInfo:Microsoft-Windows-Subsystem-Linux
 
-#dism.exe /Online /Enable-Feature /FeatureName:VirtualMachinePlatform /All
-#Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All -NoRestart
-#bcdedit /set hypervisorlaunchtype auto
+dism.exe /Online /Enable-Feature /FeatureName:VirtualMachinePlatform /All
+bcdedit /set hypervisorlaunchtype auto
 
 Set-ExecutionPolicy -Scope CurrentUser unrestricted
 

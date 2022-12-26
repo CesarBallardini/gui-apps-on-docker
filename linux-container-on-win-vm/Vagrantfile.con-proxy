@@ -23,6 +23,8 @@ MSG
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
+  use_proxy = Vagrant.has_plugin?("vagrant-proxyconf")
+
   if Vagrant.has_plugin?("vagrant-hostmanager")
     config.hostmanager.enabled = true
     config.hostmanager.manage_host = true
@@ -63,10 +65,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     srv.vm.provider :virtualbox do |vb|
       vb.gui = true
-      vb.cpus = 4
+      vb.cpus = 2
       vb.memory = "6144"
 
-      vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
       vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
       #vb.customize ["setextradata", "global", "GUI/SuppressMessages", "all" ]
     end
@@ -75,13 +76,21 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     ##
     # Aprovisionamiento
     #
+    if Vagrant.has_plugin?("vagrant-proxyconf")
+      config.vm.provision "proxy_setup", type: "shell", privileged: "true", inline: <<-POWERSHELL
+        setx HTTP_PROXY "#{config.proxy.http}" /m
+        setx HTTPS_PROXY "#{config.proxy.https}" /m
+        setx NO_PROXY "#{config.proxy.no_proxy}" /m
+
+POWERSHELL
+    end
+
 
     config.vm.provision "install_boxstarter", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
       $box_uri = "https://boxstarter.org/bootstrapper.ps1"
-      #$proxy = ([System.Net.WebRequest]::GetSystemWebproxy()).GetProxy($uri)
-      #. { Invoke-WebRequest -useb $box_uri -Proxy $proxy -ProxyUseDefaultCredentials } | Invoke-Expression; Get-Boxstarter -Force
-      . { Invoke-WebRequest -useb $box_uri } | Invoke-Expression; Get-Boxstarter -Force
+      $proxy = ([System.Net.WebRequest]::GetSystemWebproxy()).GetProxy($uri)
+      . { Invoke-WebRequest -useb $box_uri -Proxy $proxy -ProxyUseDefaultCredentials } | Invoke-Expression; Get-Boxstarter -Force
 
       # Copy setup[012].ps1 to the Temp directory and then run boxstarter with our setup.ps1 script
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
@@ -93,7 +102,7 @@ POWERSHELL
 
     config.vm.provision "run_setup0", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
-      #Set-PSDebug -Trace 1
+      Set-PSDebug -Trace 1
 
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
       Import-Module Boxstarter.Chocolatey
@@ -101,11 +110,9 @@ POWERSHELL
       Install-BoxstarterPackage $env:TEMP\setup0.ps1 -Credential $credential
 POWERSHELL
 
-    config.vm.provision :reload
-
     config.vm.provision "run_setup1", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
-      #Set-PSDebug -Trace 1
+      Set-PSDebug -Trace 1
 
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
       Import-Module Boxstarter.Chocolatey
@@ -115,9 +122,9 @@ POWERSHELL
 
     config.vm.provision :reload
 
-    config.vm.provision "run_setup2", type: "shell", privileged: "true", run: "never", inline: <<-'POWERSHELL'
+    config.vm.provision "run_setup2", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
-      #Set-PSDebug -Trace 1
+      Set-PSDebug -Trace 1
 
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
       Import-Module Boxstarter.Chocolatey
