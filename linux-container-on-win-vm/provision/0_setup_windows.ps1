@@ -13,3 +13,7 @@ Set-TaskbarOptions -Dock Bottom
 Update-Help
 Install-WindowsUpdate
 
+# Fix Windows Explorer
+Set-WindowsExplorerOptions -EnableShowHiddenFilesFoldersDrives -EnableShowProtectedOSFiles -EnableShowFileExtensions -EnableShowFullPathInTitleBar
+
+

@@ -94,44 +94,75 @@ POWERSHELL
       $proxy = ([System.Net.WebRequest]::GetSystemWebproxy()).GetProxy($box_uri)
       . { Invoke-WebRequest -useb $box_uri -Proxy $proxy -ProxyUseDefaultCredentials } | Invoke-Expression; Get-Boxstarter -Force
 
-      # Copy setup[012].ps1 to the Temp directory and then run boxstarter with our setup.ps1 script
+POWERSHELL
+
+    config.vm.provision "copy_setup_files", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+      # Copy setup[012].ps1 to the Temp directory and then run boxstarter with our setup[012].ps1 scripts
+
+      #Set-PSDebug -Trace 1
+
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
-      cp C:\vagrant\provision\setup0.ps1 $env:TEMP
-      cp C:\vagrant\provision\setup1.ps1 $env:TEMP
-      cp C:\vagrant\provision\setup2.ps1 $env:TEMP
+      cp C:\vagrant\provision\0_setup_windows.ps1 $env:TEMP
+
+      cp C:\vagrant\provision\1_setup_wsl2.ps1 $env:TEMP
+      cp C:\vagrant\provision\2_setup_wsl2.ps1 $env:TEMP
+      cp C:\vagrant\provision\3_setup_docker.ps1 $env:TEMP
+
+      cp C:\vagrant\provision\4_choco_installs.ps1 $env:TEMP
 
 POWERSHELL
 
-    config.vm.provision "run_setup0", type: "shell", privileged: "true", run: "never", inline: <<-'POWERSHELL'
+    config.vm.provision "run_0_setup_windows", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
       #Set-PSDebug -Trace 1
 
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
       Import-Module Boxstarter.Chocolatey
       $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
-      Install-BoxstarterPackage $env:TEMP\setup0.ps1 -Credential $credential
+      Install-BoxstarterPackage $env:TEMP\0_setup_windows.ps1 -Credential $credential
 POWERSHELL
 
-    config.vm.provision "run_setup1", type: "shell", privileged: "true", run: "never", inline: <<-'POWERSHELL'
+    config.vm.provision "run_1_setup_wsl2", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
-      Set-PSDebug -Trace 1
+      #Set-PSDebug -Trace 1
 
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
       Import-Module Boxstarter.Chocolatey
       $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
-      Install-BoxstarterPackage $env:TEMP\setup1.ps1 -Credential $credential
+      Install-BoxstarterPackage $env:TEMP\1_setup_wsl2.ps1 -Credential $credential
 POWERSHELL
 
     config.vm.provision :reload
 
-    config.vm.provision "run_setup2", type: "shell", privileged: "true", run: "never", inline: <<-'POWERSHELL'
+    config.vm.provision "run_2_setup_wsl2", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
-      Set-PSDebug -Trace 1
+      #Set-PSDebug -Trace 1
 
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
       Import-Module Boxstarter.Chocolatey
       $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
-      Install-BoxstarterPackage $env:TEMP\setup2.ps1 -Credential $credential
+      Install-BoxstarterPackage $env:TEMP\2_setup_wsl2.ps1 -Credential $credential
 POWERSHELL
+
+    config.vm.provision "run_3_setup_docker", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+
+      #Set-PSDebug -Trace 1
+
+      $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
+      Import-Module Boxstarter.Chocolatey
+      $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
+      Install-BoxstarterPackage $env:TEMP\3_setup_docker.ps1 -Credential $credential
+POWERSHELL
+
+    config.vm.provision "run_choco_installs", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+
+      #Set-PSDebug -Trace 1
+
+      $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
+      Import-Module Boxstarter.Chocolatey
+      $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
+      Install-BoxstarterPackage $env:TEMP\4_choco_installs.ps1 -Credential $credential
+POWERSHELL
+
 
 end

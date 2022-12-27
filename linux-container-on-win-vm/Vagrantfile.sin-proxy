@@ -85,20 +85,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
       # Copy setup[012].ps1 to the Temp directory and then run boxstarter with our setup.ps1 script
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
-      cp C:\vagrant\provision\setup0.ps1 $env:TEMP
+      cp C:\vagrant\provision\0_setup_windows.ps1 $env:TEMP
       cp C:\vagrant\provision\setup1.ps1 $env:TEMP
       cp C:\vagrant\provision\setup2.ps1 $env:TEMP
 
 POWERSHELL
 
-    config.vm.provision "run_setup0", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+    config.vm.provision "run_0_setup_windows", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
       #Set-PSDebug -Trace 1
 
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
       Import-Module Boxstarter.Chocolatey
       $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
-      Install-BoxstarterPackage $env:TEMP\setup0.ps1 -Credential $credential
+      Install-BoxstarterPackage $env:TEMP\0_setup_windows.ps1 -Credential $credential
 POWERSHELL
 
     config.vm.provision :reload

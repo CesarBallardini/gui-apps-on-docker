@@ -7,9 +7,9 @@
 #    handles trying to install the same package more than once.
 #  - Pass -y to choco install to avoid interactive prompts
 
-
 choco feature enable -n=allowGlobalConfirmation
 choco feature enable -n=useRememberedArgumentsForUpgrades
+
 
 # Useful apps
 choco install microsoft-windows-terminal
@@ -22,7 +22,7 @@ choco install 7zip
 #choco install falkon
 #choco install fbreader
 #choco install libreoffice-fresh
-choco install lockhunter
+#choco install lockhunter
 choco install mc -ia /TASKS="desktopicon,modifypath"
 #choco install obs-studio.install
 choco install okular
