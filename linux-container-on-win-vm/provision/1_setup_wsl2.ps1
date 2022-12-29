@@ -19,8 +19,7 @@ bcdedit /set hypervisorlaunchtype auto
 # Step 3: Update the Linux kernel to the latest version
 $uri = "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
 $out = "c:\tmp\wsl_update_x64.msi"
-$proxy = ([System.Net.WebRequest]::GetSystemWebproxy()).GetProxy($uri)
-Invoke-WebRequest -uri $uri -OutFile $out -Proxy $proxy -ProxyUseDefaultCredentials
+Invoke-WebRequest -uri $uri -OutFile $out
 Start-Process -FilePath "msiexec.exe" -ArgumentList "/i $out /quiet /norestart /l c:\tmp\wsl2_install_log.txt" -NoNewWindow -Wait
 #start /wait msiexec /i C:\tmp\wsl_update_x64.msi /quiet /norestart /l c:\tmp\wsl2_install_log.txt
 

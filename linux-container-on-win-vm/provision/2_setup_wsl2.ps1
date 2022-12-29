@@ -1,4 +1,4 @@
-# Boxstarter setup script
+ Boxstarter setup script
 
 # update WSL2
 wsl --update
@@ -8,8 +8,9 @@ wsl --shutdown
 wsl --set-default-version 2
 # Step 6: Install your preferred Linux distribution
 
-wsl --list --verbose
-wsl --install
+wsl --list --online
+wsl --install Ubuntu
+wsl --set-default-version Ubuntu
 
 #Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform
 dism.exe /Online  /Get-FeatureInfo:VirtualMachinePlatform

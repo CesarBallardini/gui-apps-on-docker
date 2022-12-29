@@ -70,6 +70,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       vb.memory = "6144"
 
       vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+      vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
       #vb.customize ["setextradata", "global", "GUI/SuppressMessages", "all" ]
     end
   end
