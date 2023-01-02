@@ -102,6 +102,7 @@ POWERSHELL
       #Set-PSDebug -Trace 1
 
       $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
+      cp C:\vagrant\provision\0_choco_automate_windows_updates.ps1 $env:TEMP
       cp C:\vagrant\provision\0_setup_windows.ps1 $env:TEMP
 
       cp C:\vagrant\provision\1_setup_wsl2.ps1 $env:TEMP
@@ -111,6 +112,18 @@ POWERSHELL
       cp C:\vagrant\provision\4_choco_installs.ps1 $env:TEMP
 
 POWERSHELL
+
+    config.vm.provision "choco_automate_windows_updates", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
+
+      #Set-PSDebug -Trace 1
+
+      $env:PSModulePath = "$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'User'));$([System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine'))"
+      Import-Module Boxstarter.Chocolatey
+      $credential = New-Object System.Management.Automation.PSCredential("vagrant", (ConvertTo-SecureString "vagrant" -AsPlainText -Force))
+      Install-BoxstarterPackage $env:TEMP\0_choco_automate_windows_updates.ps1 -Credential $credential
+POWERSHELL
+
+    config.vm.provision :reload
 
     config.vm.provision "run_0_setup_windows", type: "shell", privileged: "true", inline: <<-'POWERSHELL'
 
