@@ -1,4 +1,4 @@
-# Boxstarter setup script
+ Boxstarter setup script
 
 Write-Host "WSL: update WSL2"
 wsl --update
